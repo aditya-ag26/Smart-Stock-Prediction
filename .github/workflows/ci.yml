@@ -74,7 +74,7 @@ jobs:
         run: docker build -t time-series-system-frontend:ci ./frontend
 
       - name: Scan backend image for vulnerabilities (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: time-series-system-backend:ci
           format: sarif
