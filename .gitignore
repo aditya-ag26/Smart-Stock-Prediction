@@ -28,3 +28,5 @@ frontend/coverage/
 
 # Misc logs
 *.log
+.vercel
+.env*
