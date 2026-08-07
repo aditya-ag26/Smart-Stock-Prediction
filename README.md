@@ -2,8 +2,8 @@
 
 **A production-deployed time-series forecasting platform** — Django + DRF backend serving LSTM/Transformer price predictions, a React terminal-style dashboard, containerized with Docker, and shipped through a GitHub Actions CI/CD pipeline to Render (API) and Vercel (frontend).
 
-[![CI/CD](https://github.com/Abhishek1187/Smart-Stock-Prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/Abhishek1187/Smart-Stock-Prediction/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Abhishek1187/Smart-Stock-Prediction/actions/workflows/codeql.yml/badge.svg)](https://github.com/Abhishek1187/Smart-Stock-Prediction/actions/workflows/codeql.yml)
+[![CI/CD](https://github.com/aditya-ag26/Smart-Stock-Prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/aditya-ag26/Smart-Stock-Prediction/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/aditya-ag26/Smart-Stock-Prediction/actions/workflows/codeql.yml/badge.svg)](https://github.com/aditya-ag26/Smart-Stock-Prediction/actions/workflows/codeql.yml)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.1-092E20?logo=django&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
