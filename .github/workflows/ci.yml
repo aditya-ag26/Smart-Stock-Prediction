@@ -112,7 +112,10 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Deploy to Vercel
-        working-directory: frontend
+        # Run from the repo root, not frontend/ - the linked Vercel project
+        # already has its Root Directory set to "frontend", applied
+        # relative to cwd. Running this from inside frontend/ would double
+        # it up into frontend/frontend, which doesn't exist.
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
