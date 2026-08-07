@@ -1,3 +1,4 @@
+import gc
 import os
 import sys
 import re
@@ -5,11 +6,19 @@ import io
 import json
 import zipfile
 import tempfile
+from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import joblib
 import tensorflow as tf
 from typing import Dict, Any, Optional, Tuple
+
+# Each cached (symbol, model_type) pair holds a full Keras model in memory
+# with no natural upper bound - on a memory-constrained host (e.g. Render's
+# free tier), caching every distinct symbol/model a demo touches eventually
+# OOMs the process. Capping the cache size and evicting least-recently-used
+# entries keeps memory bounded without changing any prediction behavior.
+MAX_CACHED_MODELS = int(os.getenv("MAX_CACHED_MODELS", "2"))
 
 # Local imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -111,9 +120,9 @@ def _load_keras_model(path: str):
 class AssetAwarePredictor:
     def __init__(self):
         self.nse_fetcher = NSEDataFetcher()
-        self.model_cache = {}
-        self.scaler_cache = {}
-        self.metadata_cache = {}
+        self.model_cache = OrderedDict()
+        self.scaler_cache = OrderedDict()
+        self.metadata_cache = OrderedDict()
         
         # Asset type configurations for validation
         self.asset_configs = {
@@ -171,6 +180,7 @@ class AssetAwarePredictor:
         cache_key = f"{symbol}_{model_type}"
         
         if cache_key in self.model_cache:
+            self.model_cache.move_to_end(cache_key)
             return self.model_cache[cache_key], self.scaler_cache[cache_key]
         
         paths = self.get_model_paths(symbol, model_type)
@@ -198,7 +208,8 @@ class AssetAwarePredictor:
                 self.model_cache[cache_key] = model
                 self.scaler_cache[cache_key] = (feature_scaler, target_scaler)
                 self.metadata_cache[cache_key] = metadata
-                
+                self._evict_lru_if_needed()
+
                 print(f"[INFO] ✅ Asset-specific model loaded for {symbol}")
                 return model, (feature_scaler, target_scaler)
             
@@ -209,6 +220,15 @@ class AssetAwarePredictor:
         except Exception as e:
             print(f"[ERROR] Failed to load asset-specific model for {symbol}: {str(e)}")
             return self.load_fallback_model(model_type)
+
+    def _evict_lru_if_needed(self):
+        """Keep at most MAX_CACHED_MODELS loaded, dropping the least-recently-used."""
+        while len(self.model_cache) > MAX_CACHED_MODELS:
+            evicted_key, _ = self.model_cache.popitem(last=False)
+            self.scaler_cache.pop(evicted_key, None)
+            self.metadata_cache.pop(evicted_key, None)
+            print(f"[INFO] Evicted cached model for {evicted_key} to bound memory usage")
+        gc.collect()
 
     def load_fallback_model(self, model_type):
         """Load fallback improved models"""

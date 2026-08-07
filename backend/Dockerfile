@@ -22,7 +22,9 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=stockproject.settings
+    DJANGO_SETTINGS_MODULE=stockproject.settings \
+    TF_CPP_MIN_LOG_LEVEL=2 \
+    MALLOC_ARENA_MAX=2
 
 WORKDIR /app
 
