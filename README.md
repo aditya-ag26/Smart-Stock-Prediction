@@ -12,6 +12,13 @@
 
 ---
 
+## Live demo
+
+- **Frontend:** [smart-stock-prediction.vercel.app](https://smart-stock-prediction.vercel.app)
+- **Backend API:** [time-series-system-backend.onrender.com](https://time-series-system-backend.onrender.com/api/health/)
+
+Render's free tier spins down on inactivity, so the first request after idle can take 30-60s to wake up — see [Known limitations](#known-limitations).
+
 ## What this is
 
 Smart Stock Predictor is a terminal-style market analytics and forecasting platform for Indian equities and indices. It combines a Django backend (market data, technical indicators, sentiment, LSTM/Transformer model serving) with a React + Vite frontend rendering a high-density trading terminal.
@@ -87,6 +94,8 @@ See [`backend/stockproject/.env.example`](backend/stockproject/.env.example) and
 | `DATABASE_URL` | backend | If set, switches from SQLite to Postgres automatically |
 | `NEWS_API_KEY`, `GNEWS_API_KEY` | backend | Sentiment ingestion (optional — degrades gracefully if unset) |
 | `TWELVEDATA_API_KEY` | backend | Fallback market data source (optional) |
+| `GUNICORN_WORKERS` | backend | Defaults to `1` — each worker loads its own full copy of TensorFlow + models, so this stays low on memory-constrained hosts |
+| `MAX_CACHED_MODELS` | backend | Defaults to `2` — caps how many distinct (symbol, model_type) Keras models stay loaded at once (LRU-evicted) |
 | `VITE_API_BASE_URL` | frontend | Backend URL baked in at build time |
 
 ## API overview
@@ -135,8 +144,8 @@ Every push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 ## Known limitations
 
 - The `predictor` Django app has no automated tests yet (`stockapi` does); the frontend has Jest wired in but currently zero component tests after removing stale ones that tested since-removed UI.
-- Render's free tier spins down on inactivity — the first request after idle pays both Render's cold start and the lazy model-load cost together.
-- Each gunicorn worker loads its own copy of all models into memory; worker count is deliberately kept low (`2`) rather than scaled up.
+- Render's free tier (512MB RAM) spins down on inactivity — the first request after idle pays both Render's cold start and the lazy model-load cost together.
+- TensorFlow's own baseline memory footprint is the dominant cost of running this service at all, well before any model is loaded. `GUNICORN_WORKERS=1`, an LRU-capped model cache (`MAX_CACHED_MODELS=2`), and periodic gunicorn worker recycling (`--max-requests`) keep this bounded on the free tier, but heavy concurrent multi-symbol usage can still occasionally trigger an OOM restart (Render auto-restarts, so this self-heals within seconds rather than staying down).
 
 ## Repository structure
 
@@ -153,4 +162,4 @@ docs/ARCHITECTURE.md              System design and production decisions
 docs/DEPLOYMENT.md                Step-by-step deployment guide
 ```
 
-Deeper documentation: [`PROJECT_DOCUMENTATION.md`](PROJECT_DOCUMENTATION.md) (full system walkthrough), [`DATA_DATABASE_DOCUMENTATION.md`](DATA_DATABASE_DOCUMENTATION.md) (data lifecycle and schema).
+Deeper documentation: [`PROJECT_DOCUMENTATION.md`](PROJECT_DOCUMENTATION.md) (full system walkthrough), [`DATA_DATABASE_DOCUMENTATION.md`](DATA_DATABASE_DOCUMENTATION.md) (data lifecycle and schema), [`docs/PHASE_1_COMPLETE.md`](docs/PHASE_1_COMPLETE.md) (deployment retrospective — what broke and how it was fixed).
