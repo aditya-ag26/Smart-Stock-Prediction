@@ -34,9 +34,15 @@ SECRET_KEY = os.getenv('SECRET_KEY') or 'django-insecure-@@xtz^g5--&%h6iz7&^4ohb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (os.getenv('DEBUG') or 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    h.strip() for h in (os.getenv('ALLOWED_HOSTS') or 'localhost,127.0.0.1').split(',') if h.strip()
-]
+# '127.0.0.1'/'localhost' are always allowed (not just as the dev default)
+# because the Docker HEALTHCHECK/Render's container-internal health probe
+# hits the container via loopback, regardless of what ALLOWED_HOSTS is
+# configured to for real external traffic in production.
+ALLOWED_HOSTS = list({
+    *(h.strip() for h in (os.getenv('ALLOWED_HOSTS') or '').split(',') if h.strip()),
+    'localhost',
+    '127.0.0.1',
+})
 
 
 # Application definition
